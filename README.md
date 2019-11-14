@@ -6,7 +6,8 @@ Stuart Lowe さんの VirtualSky (https://github.com/slowe/VirtualSky) を利用
 
 ## 動作環境
 
-- VirtualSky: https://github.com/rnanba/VirtualSky 26916aa 以降
+- VirtualSky: v0.7.4
+-- IE11 対応は改造版の rnanba/VirtualSky@daaf189 以降
 - ブラウザ: Firefox, Chrome, Safari, IE11
 
 ## 使用法等
