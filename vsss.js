@@ -36,7 +36,11 @@ function VirtualSkySlideShow(opt) {
   }
   // hide help button.
   S('head').append('<style type="text/css">' +
-                   '.' + popt.id + '_btn_help { display: none !important; }'  +
+                   '.' + popt.id + '_btn_help { display: none !important; } '  +
+                   '#' + popt.id + '.fullscreen {' +
+                   '  width: 100vw !important;' +
+                   '  height: 100vh !important;' +
+                   '}' +
                    '</style>');
   // resize target element
   var elm = document.getElementById(popt.id);
