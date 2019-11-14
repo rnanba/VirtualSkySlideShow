@@ -156,14 +156,14 @@ VirtualSkySlideShow.prototype.moveToRADec = function (ra, dec, label,
                                                       duration, onEnd) {
   if (typeof ra == "string") {
     var f = this.RA_REGEXP.exec(ra);
-    ra = 15.0 * Number.parseInt(f[1]) + Number.parseInt(f[2]) * 15.0 / 60.0 +
-      Number.parseFloat(f[3]) * 15.0 / 60.0 / 60.0;
+    ra = 15.0 * parseInt(f[1], 10) + parseInt(f[2], 10) * 15.0 / 60.0 +
+      parseFloat(f[3]) * 15.0 / 60.0 / 60.0;
     //console.log(f[0] + " -> " + ra);
   }
   if (typeof dec == "string") {
     var f = this.DEC_REGEXP.exec(dec);
-    dec = Number.parseInt(f[1]) + Number.parseInt(f[2]) * 1.0 / 60.0 +
-      Number.parseFloat(f[3]) * 1.0 / 60.0 / 60.0;
+    dec = parseInt(f[1], 10) + parseInt(f[2], 10) * 1.0 / 60.0 +
+      parseFloat(f[3]) * 1.0 / 60.0 / 60.0;
     //console.log(f[0] + " -> " + dec);
   }
   var horizon = this.planetarium.coord2horizon(ra * this.planetarium.d2r,
