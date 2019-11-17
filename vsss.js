@@ -12,21 +12,19 @@ function VirtualSkySlideShow(opt) {
     callback: {
       'click': function (e) {
         ss.pause = !ss.pause;
+        //console.log(ss.pause ? "pause" : "start");
         if (!ss.pause) {
           if (!ss.slides || ss.slides.length == ss.slideIndex) {
             var src = (ss.url) ? ss.url : ss.data;
             ss.slideShow(src);
-          } else {
-            if (this.show) {
-              ss.hideImage(function () { ss.nextSlide() });
-            } else {
-              ss.nextSlide();
-            }
+          } else if (ss.show) {
+            ss.start();
           }
         }
       }
     }
   };
+  this.startId = 0;
   this.url = opt.url;
   this.data = opt.data;
   delete opt.url;
@@ -207,8 +205,7 @@ VirtualSkySlideShow.prototype.loadImage = function (url) {
   });
 }
 
-VirtualSkySlideShow.prototype.showImage = function (url, duration, onEnd) {
-  //console.log("show:" +url);
+VirtualSkySlideShow.prototype.showImage = function (url) {
   var css = {
     'background-color': 'black',
     'background-image': 'url("'+url+'")',
@@ -220,57 +217,57 @@ VirtualSkySlideShow.prototype.showImage = function (url, duration, onEnd) {
   this.planetarium.canvas.css({ transition: 'opacity 0.5s ease-in-out' });
   this.planetarium.canvas.css({ opacity: '0' });
   this.show = true;
-  var ss = this;
-  setTimeout(function () {
-    if (ss.pause) {
-      return;
-    }
-    if (ss.show) {
-      ss.hideImage(onEnd);
-    }
-  }, duration);
 }
 
-VirtualSkySlideShow.prototype.hideImage = function (onEnd) {
+VirtualSkySlideShow.prototype.hideImage = function () {
   var ss = this;
   ss.planetarium.canvas.css({opacity: '1' });
   ss.show = false;
-  setTimeout(function () {
-    if (onEnd) {
-      onEnd();
-    }
-  }, 500);
 }
 
-VirtualSkySlideShow.prototype.nextSlide = function () {
-  if (this.pause) {
-    return;
-  }
-  this.planetarium.pointers = [];
+VirtualSkySlideShow.prototype.nextSlide = function (auto, startId) {
+  //console.log("nextSlide("+auto+", "+startId+")");
   var ss = this;
-  var slide = this.slides[this.slideIndex++];
-  setTimeout(function () { ss.loadImage(slide.image) }, 500);
-  this.moveToClock(new Date(slide.date), this.config.spin_duration, function () {
-    var next = (ss.slides.length > ss.slideIndex) ?
-        function () {
-          setTimeout(function () {
-            ss.nextSlide();
-          }, ss.config.stop_duration);
-        } : function () {
-          ss.pause = true;
-        };
-    var show = function () {
-      setTimeout(function () {
-        ss.showImage(slide.image, ss.config.image_duration, next);
-      }, ss.config.stop_duration);
-    };
+  var slide = ss.slides[ss.slideIndex++];
+  var next = (ss.slides.length > ss.slideIndex) ?
+      function () {
+        if (!ss.pause && ss.startId == startId) {
+          ss.nextSlide(auto, startId);
+        }
+      } : function () {
+        ss.pause = true;
+      };
+  var show = function () {
+    setTimeout(function () {
+      ss.showImage(slide.image);
+      if (!ss.pause && auto) {
+        setTimeout(next, ss.config.image_duration);
+      }
+    }, ss.config.stop_duration);
+  };
+  var pan = function () {
     if (slide.planet) {
       ss.moveToPlanet(slide.planet, slide.label, ss.config.pan_duration, show);
     } else {
       ss.moveToRADec(slide.ra, slide.dec, slide.label, ss.config.pan_duration,
                      show);
     }
-  })
+  };
+  var spin = function () {
+    ss.loadImage(slide.image);
+    ss.planetarium.pointers = [];
+    ss.moveToClock(new Date(slide.date), ss.config.spin_duration, pan);
+  };
+  var waitandgo = function() {
+    document.removeEventListener('transitionend', waitandgo);
+    setTimeout(spin, ss.config.stop_durationn);
+  };
+  if (ss.show) {
+    document.addEventListener('transitionend', waitandgo);
+    ss.hideImage();
+  } else {
+    waitandgo();
+  }
 }
 
 VirtualSkySlideShow.prototype.slideShow = function (src) {
@@ -294,6 +291,15 @@ VirtualSkySlideShow.prototype.startSlideShow = function (data) {
   ss.slides = data.slides;
   ss.slideIndex = 0;
   setTimeout(function () {
-    ss.nextSlide();
+    ss.start();
   }, ss.config.stop_duration);
+}
+
+VirtualSkySlideShow.prototype.start = function () {
+  var oldId = ss.startId;
+  ss.startId++;
+  if (ss.startId == oldId) {
+    ss.startId = 0;
+  }
+  ss.nextSlide(true, ss.startId);
 }

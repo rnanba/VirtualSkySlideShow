@@ -1,4 +1,4 @@
-# VirtualSkySlideShow v0.1.2
+# VirtualSkySlideShow v0.1.3
 
 ## 概要
 
