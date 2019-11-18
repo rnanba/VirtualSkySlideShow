@@ -148,6 +148,9 @@ VirtualSkySlideShow.prototype.moveClockStep = function () {
   } else {
     this.planetarium.updateClock(this.clockMove.to);
     this.planetarium.trigger('loadedPlanets');
+    var p = this.planetarium.moonPos(this.planetarium.times.JD);
+    this.planetarium.moon = p.moon;
+    this.planetarium.sun = p.sun;
     this.planetarium.drawImmediate();
     if (this.clockMove.onEnd) {
       this.clockMove.onEnd();
