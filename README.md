@@ -1,4 +1,4 @@
-# VirtualSkySlideShow v0.2.0
+# VirtualSkySlideShow v0.3.0
 
 ## 概要
 
@@ -157,6 +157,7 @@ JavaScript 形式のスライドデータはスライドショーを表示する
       "longitude": 139.525167,
       "az": 180,
       "spin_duration" : 1500,
+      "move_duration" : 1500,
       "pan_duration" : 500,
       "stop_duration" : 1000,
       "image_duration" : 5000
@@ -205,6 +206,7 @@ JavaScript 形式のスライドデータはスライドショーを表示する
     "longitude": 139.525167,
     "az": 180,
     "spin_duration" : 1500,
+    "move_duration" : 1500,
     "pan_duration" : 500,
     "stop_duration" : 1000,
     "image_duration" : 5000
@@ -239,6 +241,7 @@ callback({
     "longitude": 139.525167,
     "az": 180,
     "spin_duration" : 1500,
+    "move_duration" : 1500,
     "pan_duration" : 500,
     "stop_duration" : 1000,
     "image_duration" : 5000
@@ -299,6 +302,7 @@ n 個のスライドを含むスライドデータの全体構造は以下のよ
   "longitude": 139.525167,
   "az": 180,
   "spin_duration" : 1500,
+  "move_duration" : 1500,
   "pan_duration" : 500,
   "stop_duration" : 1000,
   "image_duration" : 5000
@@ -312,6 +316,7 @@ n 個のスライドを含むスライドデータの全体構造は以下のよ
 - `longitude` : 観測地の経度です。数値で指定します。
 - `az` : スライド開始時に最初にプラネタリウムに表示する星空の方位です。数値で指定します。0 は北、90 が東、180 が南、270 が西です。
 - `spin_duration` : 次のスライドを表示する前にプラネタリウムの表示時刻を変化させるのにかかる時間(星空が日周運動で回転する時間)です。ミリ秒単位の数値を指定します。
+- `move_duration` : 次のスライドを表示する前にプラネタリウムの観測地を変化させるのにかかる時間です。ミリ秒単位の数値を指定します。観測地が変化しない場合は適用されません。
 - `pan_duration` : 次のスライドを表示する前にプラネタリウムに表示する星空の方位を変化させるのにかかる時間です。ミリ秒単位の数値を指定します。
 - `stop_duration` : spin と pan が終わった後スライドを表示するまでの待ち時間です。ミリ秒単位の数値を指定します。
 - `image_duration` : スライド画像を表示する時間です。ミリ秒単位の数値を指定します。
@@ -325,6 +330,8 @@ n 個のスライドを含むスライドデータの全体構造は以下のよ
 ```json
 {
   "date": "2017-11-01T18:24:00+09:00",
+  "latitude": 35.4943963,
+  "longitude": 139.525167,
   "planet": "Moon",
   "image": "https://live.staticflickr.com/4493/37379606344_25889b7a72_c.jpg",
   "label": "月齢12.6"
@@ -334,6 +341,8 @@ n 個のスライドを含むスライドデータの全体構造は以下のよ
 各設定値の意味と書式は以下の通りです。
 
 - `date` : 撮影日時です。書式は `config` の `date` と共通です。
+- `latitude` : 観測地の経度です。数値で指定します。省略すると `config` の `latitude` の値が適用されます。
+- `longitude` : 観測地の緯度です。数値で指定します。省略すると `config` の `longitude` の値が適用されます。
 - `planet` : 太陽系の天体の名前です。太陽は "Sun"、月は "Moon"、水星は "Mercury"、金星は "Venus"、火星は "Mars"、木星は "Jupiter"、土星は "Saturn"、天王星は "Uranus"、海王星は "Neptune" を指定します(大文字小文字を区別します)。
 - `image` : 写真の画像ファイルのURLです。文字列で指定します。
 - `label` : プラネタリウム上のマークに表示するラベル文字列です。
