@@ -1,11 +1,12 @@
 function VirtualSkySlideShow(opt) {
-  this.version = "0.2.0";
+  this.version = "0.3.0";
   this.pause = true;
   this.show = false;
   this.moving = false;
   this.startId = 0;
   this.clockMove = {};
   this.azMove = {};
+  this.posMove = {};
   this.RA_REGEXP = /^\s*(\d+)h\s*(\d+)m\s*(\d+(\.\d+)?)s\s*$/;
   this.DEC_REGEXP = /^\s*([+-]?\d+)[°º]\s*(\d+)['′]\s*(\d+(\.\d+)?)["″]?\s*$/;
   this.PLANET_INDEX = {
@@ -200,15 +201,21 @@ VirtualSkySlideShow.prototype.moveToRADec = function (ra, dec, label,
                                                       duration, onEnd) {
   if (typeof ra == "string") {
     var f = this.RA_REGEXP.exec(ra);
-    ra = 15.0 * parseInt(f[1], 10) + parseInt(f[2], 10) * 15.0 / 60.0 +
-      parseFloat(f[3]) * 15.0 / 60.0 / 60.0;
-    //console.log(f[0] + " -> " + ra);
+    if (f) {
+      ra = 15.0 * parseInt(f[1], 10) + parseInt(f[2], 10) * 15.0 / 60.0 +
+        parseFloat(f[3]) * 15.0 / 60.0 / 60.0;
+    } else {
+      console.log("ERROR: ra = " + ra);
+    }
   }
   if (typeof dec == "string") {
     var f = this.DEC_REGEXP.exec(dec);
-    dec = parseInt(f[1], 10) + parseInt(f[2], 10) * 1.0 / 60.0 +
-      parseFloat(f[3]) * 1.0 / 60.0 / 60.0;
-    //console.log(f[0] + " -> " + dec);
+    if (f) {
+      dec = parseInt(f[1], 10) + parseInt(f[2], 10) * 1.0 / 60.0 +
+        parseFloat(f[3]) * 1.0 / 60.0 / 60.0;
+    } else {
+      console.log("ERROR: dec = " + dec);
+    }
   }
   var horizon = this.planetarium.coord2horizon(ra * this.planetarium.d2r,
                                                dec * this.planetarium.d2r);
@@ -239,6 +246,50 @@ VirtualSkySlideShow.prototype.moveToPlanet = function (name, label,
     //console.log("planet[" + i + "]: " + name + " " + ra + "," + dec);
   }
   this.moveToRADec(ra, dec, label, duration, onEnd)
+}
+
+VirtualSkySlideShow.prototype.moveToPos = function (latitude, longitude,
+                                                    duration, onEnd) {
+  // console.log("move to " + latitude + ", " + longitude);
+  this.posMove = {
+    duration: duration,
+    start: new Date(),
+    from: {
+      latitude: this.planetarium.latitude.deg,
+      longitude: this.planetarium.longitude.deg
+    },
+    to: {
+      latitude: latitude,
+      longitude: longitude
+    },
+    onEnd: onEnd
+  };
+  this.movePosStep();
+}
+
+VirtualSkySlideShow.prototype.movePosStep = function () {
+  var now = new Date();
+  var t = (now - this.posMove.start) / this.posMove.duration;
+  if (t < 1) {
+    var lat = this.posMove.from.latitude +
+        (this.posMove.to.latitude - this.posMove.from.latitude) * t;
+    var lon = this.posMove.from.longitude +
+        (this.posMove.to.longitude - this.posMove.from.longitude) * t;
+    this.planetarium.setLatitude(lat);
+    this.planetarium.setLongitude(lon);
+    this.planetarium.updateClock(this.planetarium.clock);
+    this.planetarium.drawImmediate();
+    var ss = this;
+    requestAnimFrame(function () { ss.movePosStep() });
+  } else {
+    this.planetarium.setLatitude(this.posMove.to.latitude);
+    this.planetarium.setLongitude(this.posMove.to.longitude);
+    this.planetarium.updateClock(this.planetarium.clock);
+    this.planetarium.drawImmediate();
+    if (this.posMove.onEnd) {
+      this.posMove.onEnd();
+    }
+  }
 }
 
 VirtualSkySlideShow.prototype.loadImage = function (url) {
@@ -308,6 +359,7 @@ VirtualSkySlideShow.prototype.showSlide = function (startId, index, quick) {
   }
   var pan_duration = quick ? 50 : ss.config.pan_duration;
   var spin_duration = quick ? 50 : ss.config.spin_duration;
+  var move_duration = quick ? 50 : ss.config.move_duration;
   var stop_duration = quick ? 10 : ss.config.stop_duration;
   var next = function () {
     //console.log("next");
@@ -346,11 +398,17 @@ VirtualSkySlideShow.prototype.showSlide = function (startId, index, quick) {
       ss.moveToRADec(slide.ra, slide.dec, slide.label, pan_duration, show);
     }
   };
+  var move = function () {
+    //console.log("move");
+    ss.moveToPos(slide.latitude, slide.longitude, move_duration, pan);
+  };
   var spin = function () {
     //console.log("spin");
     ss.loadImage(slide.image);
     ss.planetarium.pointers = [];
-    ss.moveToClock(new Date(slide.date), spin_duration, pan);
+    var f = (slide.latitude === ss.planetarium.latitude.deg &&
+             slide.longitude === ss.planetarium.longitude.deg) ? pan : move;
+    ss.moveToClock(new Date(slide.date), spin_duration, f);
   };
   var waitandgo = function() {
     //console.log("waitandgo");
@@ -394,8 +452,32 @@ VirtualSkySlideShow.prototype.loadSlides = function (src, onLoad) {
 }
 
 VirtualSkySlideShow.prototype.init = function (data) {
-  this.config = data.config;
+  this.config = {
+    date: "1970-01-01T00:00:00+00:00",
+    latitude: 35,
+    longitude: 139,
+    az: 180,
+    spin_duration : 1500,
+    pan_duration : 500,
+    move_duration : 500,
+    stop_duration : 1000,
+    image_duration : 5000
+  };
+  for (var p in data.config) {
+    this.config[p] = data.config[p];
+  }
   this.slides = data.slides;
+  var latitude = this.config.latitude;
+  var longitude = this.config.longitude;
+  for (var i=0; i<this.slides.length; i++) {
+    var s = this.slides[i];
+    if (!s.latitude) {
+      s.latitude = this.config.latitude;
+    }
+    if (!s.longitude) {
+      s.longitude = this.config.longitude;
+    }
+  }
   this.slideIndex = -1;
 }
 
