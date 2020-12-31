@@ -35,12 +35,13 @@ addEventListener("DOMContentLoaded", function(){
   }
   const onClick = function () {
     const RA_REGEXP = /(\d+)h\s*(\d+)m\s(\d+(\.\d+)?)s/;
-    const DEC_REGEXP = /\s*([+-]?\d+)[°º]\s*(\d+)['′]\s*(\d+(\.\d+)?)["″]/;
+    const DEC_REGEXP = /\s*([+-＋−]?\d+)[°º]\s*(\d+)['′]\s*(\d+(\.\d+)?)["″]/;
     let m = RA_REGEXP.exec(raText);
     const obj = {};
     obj.ra = m[1] + "h " + m[2] + "m " + m[3] + "s",
     m = DEC_REGEXP.exec(decText);
-    obj.dec = m[1] + "° " + m[2] + "' " + m[3] + "\"";
+    let md = m[1].replace('＋', '+').replace('−', '-');
+    obj.dec = md + "° " + m[2] + "' " + m[3] + "\"";
     console.log(JSON.stringify(obj, null, "  "));
     if (window.opener) {
       window.opener.postMessage({
