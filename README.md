@@ -1,4 +1,4 @@
-# VirtualSkySlideShow v0.3.0
+# VirtualSkySlideShow v0.4.0
 
 ## 概要
 
@@ -20,6 +20,8 @@ VirtualSkySlideShow (VSSS) は、Stuart Lowe さんの VirtualSky (https://githu
 | <kbd>n</kbd>, <kbd>→</kbd> 	 | 次のスライド 	     |
 | <kbd>,</kbd>, <kbd>HOME</kbd>  | 先頭に移動 		     |
 | <kbd>.</kbd>, <kbd>END</kbd> 	 | 最後に移動  		     |
+
+動画のスライドが表示されると、自動的にその動画の再生が始まります。再生が終わると自動的に次のスライドに移動します。ただし、スライドショーの停止中は再生が終わっても現在のスライドに留まります。
 
 ## デモ
 
@@ -171,6 +173,13 @@ JavaScript 形式のスライドデータはスライドショーを表示する
         "label": "M42"
       },
       {
+      	"date": "2021-07-17T01:42:24+09:00",
+        "planet": "Jupiter",
+      	"video": "https://www.flickr.com/photos/rnanba/51330176946/play/720p/367d0115fd/",
+        "poster": "https://live.staticflickr.com/31337/51330176946_367d0115fd_z.jpg",
+      	"label": "木星 (2021/7/17 1:42:24-2:57:36)"
+      },
+      {
         "date": "2017-11-01T18:24:00+09:00",
         "planet": "Moon",
         "image": "https://live.staticflickr.com/4493/37379606344_25889b7a72_c.jpg",
@@ -220,6 +229,13 @@ JavaScript 形式のスライドデータはスライドショーを表示する
       "label": "M42"
     },
     {
+      "date": "2021-07-17T01:42:24+09:00",
+      "planet": "Jupiter",
+      "video": "https://www.flickr.com/photos/rnanba/51330176946/play/720p/367d0115fd/",
+      "poster": "https://live.staticflickr.com/31337/51330176946_367d0115fd_z.jpg",
+      "label": "木星 (2021/7/17 1:42:24-2:57:36)"
+    },
+    {
       "date": "2017-11-01T18:24:00+09:00",
       "planet": "Moon",
       "image": "https://live.staticflickr.com/4493/37379606344_25889b7a72_c.jpg",
@@ -253,6 +269,13 @@ callback({
       "dec": "-05° 23′ 28″",
       "image": "https://live.staticflickr.com/4505/24115433588_a9612b9b3c_c.jpg",
       "label": "M42"
+    },
+    {
+      "date": "2021-07-17T01:42:24+09:00",
+      "planet": "Jupiter",
+      "label": "木星 (2021/7/17 1:42:24-2:57:36)",
+      "video": "https://www.flickr.com/photos/rnanba/51330176946/play/720p/367d0115fd/",
+      "poster": "https://live.staticflickr.com/31337/51330176946_367d0115fd_z.jpg"
     },
     {
       "date": "2017-11-01T18:24:00+09:00",
@@ -365,6 +388,27 @@ n 個のスライドを含むスライドデータの全体構造は以下のよ
 - `dec` : 対象天体の赤緯です。度分秒形式の文字列または数値で指定します。例: "-05° 23′ 28″" は赤緯マイナス5度23分28秒(「°」は「º」でもOK。「′」は半角の「'」でもOK。「″」は半角の「"」でもOKですが、JSONの文字列なのでエスケープして「\"」と書く必要があります)。例: -60.517 は赤緯-60.517度。
 
 その他は月、太陽、惑星の場合と同様です。
+
+動画を表示する場合は以下のように `image` のかわりに `video` に動画ファイルのURLを記述します。
+
+```json
+{
+  "date": "2021-07-17T01:42:24+09:00",
+  "planet": "Jupiter",
+  "video": "https://www.flickr.com/photos/rnanba/51330176946/play/720p/367d0115fd/",
+  "poster": "https://live.staticflickr.com/31337/51330176946_367d0115fd_z.jpg",
+  "label": "木星 (2021/7/17 1:42:24-2:57:36)"
+}
+```
+
+各設定値の意味と書式は以下の通りです。
+
+- `video` : 動画ファイルのURLです。表示するブラウザの `<video>` タグがサポートする動画のみ表示可能です。`image` とは排他で、`video` の設定が優先になります。
+- `poster` : 動画のロード中に表示する画像(いわゆるサムネイル)のURLです。省略すると動画の最初のフレームがロードされるまで何も表示されません。
+
+その他は画像の場合と同様です。
+
+`video` に指定するURLは、mp4 等の動画ファイルそのもののURLです。YouTube 等の動画配信サービスの動画ページのURLではないことに注意してください。
 
 ## Q&amp;A
 

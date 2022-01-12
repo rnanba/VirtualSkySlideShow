@@ -1,5 +1,5 @@
 function VirtualSkySlideShow(opt) {
-  this.version = "0.3.0";
+  this.version = "0.4.0";
   this.pause = true;
   this.show = false;
   this.moving = false;
@@ -26,6 +26,7 @@ function VirtualSkySlideShow(opt) {
   this.id = opt.id;
   this.url = opt.url;
   this.data = opt.data;
+  this.video = null;
   delete opt.url;
   delete opt.data;
   delete opt.quick_with_key;
@@ -118,6 +119,22 @@ function VirtualSkySlideShow(opt) {
         ss.end();
       }
     });
+  });
+  document.addEventListener('fullscreenchange', function () {
+    var vs = ss.planetarium;
+    if (fullScreenApi.isFullScreen()) {
+      if (!vs.fullscreen) {
+	vs.fullscreen = true;
+	vs.container.addClass('fullscreen');
+        // console.log("fix fullscreen status: " + vs.fullscreen);
+      }
+    } else {
+      if (vs.fullscreen) {
+	vs.fullscreen = false;
+	vs.container.removeClass('fullscreen');
+        // console.log("fix fullscreen status: " + vs.fullscreen);
+      }
+    }
   });
   return this;
 }
@@ -296,6 +313,46 @@ VirtualSkySlideShow.prototype.loadImage = function (url) {
   this.planetarium.container.css({
     'background-image': 'url("'+url+'")'
   });
+  ss.loaded = 'image'
+}
+
+VirtualSkySlideShow.prototype.loadVideo = function (url, posterUrl) {
+  var ss = this;
+  var container = ss.planetarium.container.e[0];
+  var canvas = ss.planetarium.canvas.e[0];
+  if (!ss.videoWrapper) {
+    ss.videoWrapper = document.createElement('div');
+    ss.videoWrapper.style.setProperty("text-align", "center");
+    ss.videoWrapper.style.setProperty("position", "absolute");
+    var resizeVideoWrapper = function () {
+      var cw = canvas.style.getPropertyValue("width");
+      var ch = canvas.style.getPropertyValue("height");
+      ss.videoWrapper.style.setProperty("width", cw);
+      ss.videoWrapper.style.setProperty("height", ch)
+      // console.log(ss.videoWrapper.style.getPropertyValue("width") +
+      //             "x" + ss.videoWrapper.style.getPropertyValue("height"));
+    };
+    window.addEventListener('resize', resizeVideoWrapper);
+    document.addEventListener('fullscreenchange', resizeVideoWrapper);
+    container.prepend(ss.videoWrapper);
+    resizeVideoWrapper();
+  }
+  if (!ss.video) {
+    ss.video = document.createElement('video');
+    ss.video.style.setProperty("background-color", "black");
+    ss.video.style.setProperty("width", "100%");
+    ss.video.style.setProperty("height", "100%");
+    ss.video.style.setProperty("opacity", "0");
+    ss.video.setAttribute('controls', 'controls');
+    ss.videoWrapper.prepend(ss.video);
+  }
+  ss.videoWrapper.style.setProperty("visibility", "visible");
+  if (posterUrl) {
+    ss.video.setAttribute('poster', posterUrl);
+  }
+  ss.video.setAttribute('src', url);
+  ss.video.load();
+  ss.loaded = 'video'
 }
 
 VirtualSkySlideShow.prototype.showImage = function (url) {
@@ -312,10 +369,61 @@ VirtualSkySlideShow.prototype.showImage = function (url) {
   this.show = true;
 }
 
+VirtualSkySlideShow.prototype.showVideo = function (url, posterUrl) {
+  var ss = this;
+  if (!ss.video) {
+    ss.loadVideo(url, posterUrl);
+  }
+  var transitionEnd = function () {
+    ss.video.removeEventListener('transitionend', transitionEnd);
+    ss.video.play();
+  };
+  ss.video.addEventListener('transitionend', transitionEnd);
+  ss.video.style.setProperty("transition", "opacity 0.5s ease-in-out");
+  ss.video.style.setProperty("opacity", "1");
+  if (!ss.pause) {
+    var videoEnded = function (e) {
+      ss.video.removeEventListener('ended', videoEnded)
+      ss.hideVideo();
+      setTimeout(function () {
+        ss.showing = false;
+        if (!ss.pause) {
+          ss.nextSlide(ss.startId, false);
+        }
+      }, 500);
+    }
+    ss.video.addEventListener('ended', videoEnded);
+  }
+  this.show = true;
+}
+
+VirtualSkySlideShow.prototype.hideMedia = function (url) {
+  if (this.loaded === 'image') {
+    this.hideImage();
+  } else if (this.loaded === 'video') {
+    this.hideVideo();
+  }
+}
+
 VirtualSkySlideShow.prototype.hideImage = function () {
   var ss = this;
   ss.planetarium.canvas.css({opacity: '1' });
   ss.show = false;
+  this.loaded = null;
+}
+
+VirtualSkySlideShow.prototype.hideVideo = function () {
+  var ss = this;
+  if (ss.video) {
+    var transitionEnd = function () {
+      ss.video.removeEventListener('transitionend', transitionEnd);
+      ss.videoWrapper.style.setProperty("visibility", "hidden");
+    };
+    ss.video.addEventListener('transitionend', transitionEnd);
+    ss.video.style.setProperty("opacity", "0");
+  }
+  ss.show = false;
+  this.loaded = null;
 }
 
 VirtualSkySlideShow.prototype.nextSlide = function (startId, quick) {
@@ -353,7 +461,7 @@ VirtualSkySlideShow.prototype.showSlide = function (startId, index, quick) {
   var slide = ss.slides[index];
   if (!slide) {
     if (ss.show) {
-      ss.hideImage();
+      ss.hideMedia();
     }
     return;
   }
@@ -383,9 +491,13 @@ VirtualSkySlideShow.prototype.showSlide = function (startId, index, quick) {
           ss.showSlide(ss.startId, ss.slideIndex, ss.quick);
         }
       } else {
-        ss.showImage(slide.image);
-        if (!ss.pause) {
-          setTimeout(next, ss.config.image_duration);
+        if (slide.video) {
+          ss.showVideo(slide.video, slide.poster);
+        } else if (slide.image) {
+          ss.showImage(slide.image);
+          if (!ss.pause) {
+            setTimeout(next, ss.config.image_duration);
+          }
         }
       }
     }, stop_duration);
@@ -404,7 +516,11 @@ VirtualSkySlideShow.prototype.showSlide = function (startId, index, quick) {
   };
   var spin = function () {
     //console.log("spin");
-    ss.loadImage(slide.image);
+    if (slide.video) {
+      ss.loadVideo(slide.video, slide.poster);
+    } else if (slide.image) {
+      ss.loadImage(slide.image);
+    }
     ss.planetarium.pointers = [];
     var f = (slide.latitude === ss.planetarium.latitude.deg &&
              slide.longitude === ss.planetarium.longitude.deg) ? pan : move;
@@ -421,7 +537,7 @@ VirtualSkySlideShow.prototype.showSlide = function (startId, index, quick) {
     //console.log("hideImage");
     //document.addEventListener('transitionend', waitandgo);
     setTimeout(waitandgo, 500);
-    ss.hideImage();
+    ss.hideMedia();
   } else {
     waitandgo();
   }
