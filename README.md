@@ -1,14 +1,14 @@
-# VirtualSkySlideShow v0.4.0
+# VirtualSkySlideShow v0.5.0
 
 ## 概要
 
-VirtualSkySlideShow (VSSS) は、Stuart Lowe さんの VirtualSky (https://github.com/slowe/VirtualSky) を利用した「星図がグリグリ動くスライドショー」です。
+VirtualSkySlideShow (VSSS) は、Stuart Lowe さんの VirtualSky (https://github.com/slowe/VirtualSky) と worka さんの vanilla-js-wheel-zoom (https://github.com/worka/vanilla-js-wheel-zoom) を利用した「星図がグリグリ動くスライドショー」です。スライド表示中は「マウスホイールでグリグリズームイン・ズームアウト」もできます。
 
 ## 動作環境
 
-- VirtualSky: v0.7.4
-  - IE11 対応は改造版の rnanba/VirtualSky@daaf189 以降
-- ブラウザ: Firefox, Chrome, Safari, IE11
+- [VirtualSky: v0.7.4](https://github.com/slowe/VirtualSky/releases/tag/v0.7.4)
+- [vanilla-js-wheel-zoom: v9.0.0](https://github.com/worka/vanilla-js-wheel-zoom/releases/tag/v9.0.0)
+- ブラウザ: Firefox, Chrome, Safari
 
 ## 操作
 
@@ -16,22 +16,36 @@ VirtualSkySlideShow (VSSS) は、Stuart Lowe さんの VirtualSky (https://githu
 |--------------------------------|---------------------------|
 | クリック			 | スライドショーの開始/停止 |
 | ダブルクリック 		 | 全画面表示/全画面解除     |
+| ホイール上 		 	 | ズームモードON	     |
 | <kbd>p</kbd>, <kbd>←</kbd> 	 | 前のスライド              |
 | <kbd>n</kbd>, <kbd>→</kbd> 	 | 次のスライド 	     |
 | <kbd>,</kbd>, <kbd>HOME</kbd>  | 先頭に移動 		     |
 | <kbd>.</kbd>, <kbd>END</kbd> 	 | 最後に移動  		     |
+| <kbd>z</kbd>	 	 	 | ズームモードON	     |
 
 動画のスライドが表示されると、自動的にその動画の再生が始まります。再生が終わると自動的に次のスライドに移動します。ただし、スライドショーの停止中は再生が終わっても現在のスライドに留まります。
 
+ズームモードは画像のスライドでのみ使用できます。動画のスライドでは使用できません。
+
+ズームモードの操作方法は以下の通りです。
+
+| 操作                           | 動作                      |
+|--------------------------------|---------------------------|
+| クリック			 | 最大ズームイン または 最小ズームアウト |
+| ホイール上 		 	 | ズームイン	     	     |
+| ホイール下 		 	 | ズームアウト または ズームモードOFF |
+| <kbd>z</kbd>	 	 	 | ズームモードOFF	     |
+
 ## デモ
 
-https://rna.hatenablog.com/entry/20191112/1573558728
+https://rna.sakura.ne.jp/share/vsss-2023.html
 
 ## スクリプトのインストール方法
 
 1. サーバー上にインストール先ディレクトリを作成します。
 2. 1 のディレクトリに https://github.com/rnanba/VirtualSky の内容を全てアップロードします(ディレクトリ構造も元のまま再現してください)。
-3. 1 のディレクトリに `vsss.js` をアップロードします。
+3. 1 のディレクトリに https://github.com/worka/vanilla-js-wheel-zoom/releases/tag/v9.0.0 からダウンロードした zip ファイル内の dist/wheel-zoom.js をアップロードします。
+4. 1 のディレクトリに `vsss.js` をアップロードします。
 4. 必要に応じてサーバーに CORS 設定を行います。
 
 ### CORS 設定

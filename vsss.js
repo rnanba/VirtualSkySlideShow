@@ -1,5 +1,5 @@
 function VirtualSkySlideShow(opt) {
-  this.version = "0.4.0";
+  this.version = "0.5.0";
   this.pause = true;
   this.show = false;
   this.moving = false;
@@ -27,6 +27,12 @@ function VirtualSkySlideShow(opt) {
   this.url = opt.url;
   this.data = opt.data;
   this.video = null;
+  this.zoomview = null;
+  this.zoomviewImage = null;
+  this.zoomMode = false;
+  this.wzoom = null; // https://github.com/worka/vanilla-js-wheel-zoom
+  this.currentZoom = 0;
+  this.captureKey = true;
   delete opt.url;
   delete opt.data;
   delete opt.quick_with_key;
@@ -70,19 +76,53 @@ function VirtualSkySlideShow(opt) {
   var elm = document.getElementById(ss.id);
   // make target element forcusable
   elm.setAttribute("tabindex", "-1");
-  // resize target element
-  var maxWidth =
-      document.documentElement.clientWidth - elm.getBoundingClientRect().left;
-  var width = elm.clientWidth;
-  var height = elm.clientHeight;
-  if (maxWidth < width) {
-    var scale = maxWidth / width;
-    width = maxWidth;
-    height = height * scale;
-    elm.style.backgroundSize = width + 'px';
+  // prepare zoom view
+  var img = document.createElement('img');
+  img.setAttribute('id', 'zoomview_image');
+  img.draggable = false;
+  var zoomview = document.createElement('div');
+  zoomview.setAttribute('id', 'zoomview');
+  zoomview.style.setProperty("position", "absolute");
+  zoomview.style.setProperty("top", "0");
+  zoomview.style.setProperty("left", "0");
+  zoomview.style.setProperty("width", "100vw");
+  zoomview.style.setProperty("height", "100vh");
+  zoomview.style.setProperty("background-color", "black");
+  zoomview.style.setProperty("display", "flex");
+  zoomview.style.setProperty("align-items", "center");
+  zoomview.style.setProperty("justify-content", "center");
+  zoomview.style.setProperty("visibility", "hidden");
+  zoomview.append(img);
+  ss.zoomview = zoomview;
+  ss.zoomviewImage = img;
+  document.body.append(zoomview);
+  ss.zoomview = zoomview;
+  ss.wzoom = WZoom.create("#zoomview_image", {
+    maxScale: 2,
+    smoothTime: 0,
+    rescale: function(wz) {
+      if (ss.zoomMode && wz.content.currentScale == wz.content.minScale &&
+          ss.currentZoom == wz.content.minScale) {
+        ss.currentZoom = 0;
+        ss.endZoom();
+      }
+      ss.currentZoom = wz.content.currentScale;
+      wz.options.smoothTime = 0.1;
+    },
+    prepare: function(wz) {
+      wz.options.smoothTime = 0;
+    }
+  });
+  ss.zoomview.setAttribute("tabindex", "-1");
+  if (!ss.captureKey) {
+    ss.zoomview.addEventListener('keydown', ss.handleKey);
   }
-  elm.style.width = width + 'px';
-  elm.style.height = height + 'px';
+  window.addEventListener('resize', () => {
+    if (ss.wzoom != null) {
+      ss.wzoom.prepare();
+    }
+  });
+  ss.resize();
   var src = (this.url) ? this.url : this.data;
   this.loadSlides(src, function () {
     if (ss.config.latitude) { popt.latitude = ss.config.latitude; }
@@ -93,32 +133,10 @@ function VirtualSkySlideShow(opt) {
     ss.planetarium.showhelp = false;
     ss.planetarium.credit = false;
     ss.planetarium.draw();
-    elm.addEventListener('keydown', function (e) {
-      //console.log("keydown("+e.keyCode+")");
-      switch (e.keyCode) {
-      case 39: // right arrow
-      case 78: // 'n'
-        //console.log("forward");
-        ss.pause = true;
-        ss.forward();
-        break;
-      case 37: // left arrow
-      case 80: // 'p'
-        //console.log("backward");
-        ss.pause = true;
-        ss.backward();
-        break;
-      case 36: // home
-      case 188: // ',' '<'
-        ss.pause = true;
-        ss.beginning();
-        break;
-      case 35: // end
-      case 190: // '.' '>'
-        ss.pause = true;
-        ss.end();
-      }
-    });
+    if (!ss.captureKey) {
+      elm.addEventListener('keydown', ss.handleKey);
+    }
+    elm.addEventListener('wheel', ss.handleWheel);
   });
   document.addEventListener('fullscreenchange', function () {
     var vs = ss.planetarium;
@@ -136,6 +154,10 @@ function VirtualSkySlideShow(opt) {
       }
     }
   });
+  if (ss.captureKey) {
+    window.addEventListener('keydown', ss.handleKey);
+  }
+  window.addEventListener('resize', function() { ss.resize(); });
   return this;
 }
 
@@ -457,6 +479,7 @@ VirtualSkySlideShow.prototype.prevSlide = function (startId, quick) {
 }
 
 VirtualSkySlideShow.prototype.showSlide = function (startId, index, quick) {
+  this.endZoom();
   var ss = this;
   var slide = ss.slides[index];
   if (!slide) {
@@ -645,4 +668,105 @@ VirtualSkySlideShow.prototype.end = function() {
   this.renewStartId();
   this.slideIndex = this.slides.length;
   this.showSlide(this.startId, this.slides.length - 1, this.quick);
+}
+
+VirtualSkySlideShow.prototype.toggleZoomMode = function() {
+  if (this.zoomMode) {
+    this.endZoom();
+  } else {
+    this.zoom();
+  }
+}
+
+VirtualSkySlideShow.prototype.zoom = function() {
+  var slide = this.slides[this.slideIndex];
+  if (this.wzoom == null || slide.video) {
+    return;
+  }
+  this.zoomMode = true;
+  this.zoomviewImage.setAttribute("src", this.slides[this.slideIndex].image);
+  this.wzoom.prepare();
+  document.getElementById(ss.id).style.setProperty("visibility", "hidden");
+  if (document.fullscreenElement) {
+    this.zoomview.requestFullscreen();
+  }
+  this.zoomview.style.setProperty("z-index", "100");
+  this.zoomview.style.setProperty("visibility", "visible");
+  this.zoomview.focus();
+}
+
+VirtualSkySlideShow.prototype.endZoom = function() {
+  if (this.wzoom == null) {
+    return;
+  }
+  if (document.fullscreenElement) {
+    document.getElementById(ss.id).requestFullscreen();
+  }
+  this.zoomviewImage.setAttribute("src", "");
+  this.zoomview.style.setProperty("visibility", "hidden");
+  this.wzoom.prepare();
+  this.zoomMode = false;
+  document.getElementById(ss.id).style.setProperty("visibility", "visible");
+  this.zoomview.style.setProperty("z-index", "-100");
+  document.getElementById(ss.id).focus();
+}
+
+VirtualSkySlideShow.prototype.handleWheel = function(e) {
+  if (ss.zoomMode) {
+    return;
+  }
+  if (e.deltaY < 0) {
+    ss.zoom();
+  }
+}
+
+VirtualSkySlideShow.prototype.handleKey = function(e) {
+  switch (e.key) {
+  case "ArrowRight":
+  case "n":
+    ss.pause = true;
+    ss.forward();
+    break;
+  case "ArrowLeft":
+  case "p":
+    ss.pause = true;
+    ss.backward();
+    break;
+  case "Home":
+  case ",":
+  case "<":
+    ss.pause = true;
+    ss.beginning();
+    break;
+  case "End":
+  case ".":
+  case ">":
+    ss.pause = true;
+    ss.end();
+    break;
+  case "z":
+    ss.pause = true;
+    ss.toggleZoomMode();
+  }
+}
+
+VirtualSkySlideShow.prototype.resize = function() {
+  var elm = document.getElementById(this.id);
+  // resize target element
+  var maxWidth =
+      document.documentElement.clientWidth - elm.getBoundingClientRect().left;
+  var width = elm.clientWidth;
+  var height = elm.clientHeight;
+  if (maxWidth < width) {
+    var scale = maxWidth / width;
+    width = maxWidth;
+    height = height * scale;
+    elm.style.backgroundSize = width + 'px';
+  }
+  if (this.planetarium) {
+    this.planetarium.resize();
+  }
+  if (this.show) {
+    this.loadImage(this.slides[this.slideIndex].image);
+  }
 }
