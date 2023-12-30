@@ -44,7 +44,7 @@ https://rna.sakura.ne.jp/share/vsss-2023.html
 
 1. サーバー上にインストール先ディレクトリを作成します。
 2. 1 のディレクトリに https://github.com/rnanba/VirtualSky の内容を全てアップロードします(ディレクトリ構造も元のまま再現してください)。
-3. 1 のディレクトリに https://github.com/worka/vanilla-js-wheel-zoom/releases/tag/v9.0.0 からダウンロードした zip ファイル内の dist/wheel-zoom.js をアップロードします。
+3. 1 のディレクトリに https://github.com/worka/vanilla-js-wheel-zoom/releases/tag/v9.0.0 からダウンロードした zip ファイル内の dist/wheel-zoom.min.js をアップロードします。
 4. 1 のディレクトリに `vsss.js` をアップロードします。
 4. 必要に応じてサーバーに CORS 設定を行います。
 
@@ -89,6 +89,7 @@ JSON形式のスライドデータファイルを使用する場合は、やは�
 スクリプトのインストール先が https://your-server.example.com/vsss/ である場合、スクリプトを読み込む HTML コードは以下のようになります。
 
 ```html
+<script src="scripts/wheel-zoom.min.js" type="text/javascript"></script>
 <script src="https://your-server.example.com/vsss/stuquery.min.js" type="text/javascript"></script>
 <script src="https://your-server.example.com/vsss/virtualsky.min.js" type="text/javascript"></script>
 <script src="https://your-server.example.com/vsss/vsss.min.js" type="text/javascript"></script>
