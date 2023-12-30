@@ -440,6 +440,8 @@ VirtualSkySlideShow.prototype.hideVideo = function () {
     var transitionEnd = function () {
       ss.video.removeEventListener('transitionend', transitionEnd);
       ss.videoWrapper.style.setProperty("visibility", "hidden");
+      ss.video.pause();
+      ss.video.setAttribute('src', null);
     };
     ss.video.addEventListener('transitionend', transitionEnd);
     ss.video.style.setProperty("opacity", "0");
