@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name     [VSSS] flickr
 // @namespace https://rna.hatenablog.com/
-// @version  1.1
+// @version  1.2
 // @include  https://www.flickr.com/photos/*
 // @grant    none
 // ==/UserScript==
@@ -46,7 +46,13 @@ addEventListener("DOMContentLoaded", function(){
         sizeMax = size;
       }
     }
-    obj.image = 'https:' + url;
+    if (model.mediaType === 'video') {
+      const owner = context.modelRegistries['person-models']._data[model.owner.id].pathAlias;
+      getVideo(owner, photoId, model.secret, obj);
+      obj.poster = 'https:' + url;
+    } else {
+      obj.image = 'https:' + url;
+    }
     obj.label = model.title;
     return obj;
   };
@@ -78,7 +84,11 @@ addEventListener("DOMContentLoaded", function(){
         break;
       }
     }
-    obj.date = date + tz;
+    if (date) {
+      obj.date = date + tz;
+    } else {
+      obj.date = null;
+    }
     return obj;
   };
   const getPhotoModel = function (photoId) {
@@ -97,7 +107,14 @@ addEventListener("DOMContentLoaded", function(){
     const model = getPhotoModel(photoId);
     return model ? model.title : null;
   };
-  
+  const getVideo = function (owner, photoId, secret, obj) {
+    const src = document.querySelector('video').src;
+    const re = /\/([^./?]+)\.[^.]+(\?.*)$/
+    const size = re.exec(src)[1]
+    obj.video = 'https://www.flickr.com/photos/' + owner + '/' + photoId +
+      '/play/' + size + '/' + secret;
+    return obj;
+  };
   const button = document.createElement('div');
   button.innerText = '[VSSS]';
   button.style.position = 'absolute';
