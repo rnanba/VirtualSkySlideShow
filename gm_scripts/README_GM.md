@@ -1,4 +1,4 @@
-# VSSS 用 Greasemonkey スクリプト
+# VSSS 用 Greasemonkey スクリプト v1.2
 
 ## 概要
 
@@ -8,7 +8,7 @@ astrometry, wikipedia と連携して天体の座標も取得できます。
 
 ## 使い方
 
-スクリプトを全て Greasemonkey に追加してから flickr の写真ページ
+スクリプトを Greasemonkey に追加してから flickr の写真ページ
 (https://www.flickr.com/photos/ で始まるURLのページ)を表示すると、右上
 に以下のボタンが表示されます。
 
@@ -70,8 +70,14 @@ astrometry 連携または wikipedia 連携で天体の座標を取得済みの�
 ## astrometry 連携
 
 flickr のページ内の [astrometry] ボタンを押すと、astrometry.net のアッ
-プロードページのタブが開き、写真が自動的に astrometry.net に送信され、
+プロードページのタブが開き、メッセージ「[VSSS] Upload image?」を表示す
+る確認ダイアログが開きます。
+
+確認ダイアログの [OK] ボタンを押すと写真が astrometry.net に送信され、
 プレートソルビングを開始します。
+
+確認ダイアログの [キャンセル] ボタンを押すと写真をアップロードせず、写
+真ページのボタンの表示は [astrometry] に戻ります。
 
 プレートソルビングの完了には数分かかります。その間はボタンの表示が
 [astrometry: wait...] になります。成功するとボタンの表示が
