@@ -1,5 +1,5 @@
 function VirtualSkySlideShow(opt) {
-  this.version = "0.5.0";
+  this.version = "0.5.1";
   this.pause = true;
   this.show = false;
   this.moving = false;
