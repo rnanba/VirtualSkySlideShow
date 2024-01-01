@@ -76,52 +76,6 @@ function VirtualSkySlideShow(opt) {
   var elm = document.getElementById(ss.id);
   // make target element forcusable
   elm.setAttribute("tabindex", "-1");
-  // prepare zoom view
-  var img = document.createElement('img');
-  img.setAttribute('id', 'zoomview_image');
-  img.draggable = false;
-  var zoomview = document.createElement('div');
-  zoomview.setAttribute('id', 'zoomview');
-  zoomview.style.setProperty("position", "absolute");
-  zoomview.style.setProperty("top", "0");
-  zoomview.style.setProperty("left", "0");
-  zoomview.style.setProperty("width", "100vw");
-  zoomview.style.setProperty("height", "100vh");
-  zoomview.style.setProperty("background-color", "black");
-  zoomview.style.setProperty("display", "flex");
-  zoomview.style.setProperty("align-items", "center");
-  zoomview.style.setProperty("justify-content", "center");
-  zoomview.style.setProperty("visibility", "hidden");
-  zoomview.append(img);
-  ss.zoomview = zoomview;
-  ss.zoomviewImage = img;
-  document.body.append(zoomview);
-  ss.zoomview = zoomview;
-  ss.wzoom = WZoom.create("#zoomview_image", {
-    maxScale: 2,
-    smoothTime: 0,
-    rescale: function(wz) {
-      if (ss.zoomMode && wz.content.currentScale == wz.content.minScale &&
-          ss.currentZoom == wz.content.minScale) {
-        ss.currentZoom = 0;
-        ss.endZoom();
-      }
-      ss.currentZoom = wz.content.currentScale;
-      wz.options.smoothTime = 0.1;
-    },
-    prepare: function(wz) {
-      wz.options.smoothTime = 0;
-    }
-  });
-  ss.zoomview.setAttribute("tabindex", "-1");
-  if (!ss.captureKey) {
-    ss.zoomview.addEventListener('keydown', ss.handleKey);
-  }
-  window.addEventListener('resize', () => {
-    if (ss.wzoom != null) {
-      ss.wzoom.prepare();
-    }
-  });
   ss.resize();
   var src = (this.url) ? this.url : this.data;
   this.loadSlides(src, function () {
@@ -160,6 +114,60 @@ function VirtualSkySlideShow(opt) {
   window.addEventListener('resize', function() { ss.resize(); });
   return this;
 }
+
+VirtualSkySlideShow.prototype.createWZoom = function () {
+  var ss = this;
+  ss.wzoom = WZoom.create("#zoomview_image", {
+    maxScale: 2,
+    smoothTime: 0,
+    rescale: function(wz) {
+      var newScale = wz.content.currentScale;
+      if (ss.zoomMode && newScale == wz.content.minScale &&
+          ss.currentZoom == wz.content.minScale) {
+        ss.currentZoom = 0;
+        ss.endZoom();
+      } else {
+        ss.currentZoom = newScale
+        wz.options.smoothTime = 0.1;
+      }
+    },
+    prepare: function(wz) {
+      wz.options.smoothTime = 0;
+    }
+  });
+}
+
+VirtualSkySlideShow.prototype.createZoomView = function () {
+  var ss = this;
+  var img = document.createElement('img');
+  img.setAttribute('id', 'zoomview_image');
+  img.draggable = false;
+  var zoomview = document.createElement('div');
+  zoomview.setAttribute('id', 'zoomview');
+  zoomview.style.setProperty("position", "absolute");
+  zoomview.style.setProperty("top", "0");
+  zoomview.style.setProperty("left", "0");
+  zoomview.style.setProperty("width", "100vw");
+  zoomview.style.setProperty("height", "100vh");
+  zoomview.style.setProperty("background-color", "black");
+  zoomview.style.setProperty("display", "flex");
+  zoomview.style.setProperty("align-items", "center");
+  zoomview.style.setProperty("justify-content", "center");
+  zoomview.style.setProperty("visibility", "hidden");
+  zoomview.append(img);
+  ss.zoomview = zoomview;
+  ss.zoomviewImage = img;
+  ss.zoomview = zoomview;
+  ss.zoomview.setAttribute("tabindex", "-1");
+  if (!ss.captureKey) {
+    ss.zoomview.addEventListener('keydown', ss.handleKey);
+  }
+  window.addEventListener('resize', () => {
+    if (ss.wzoom != null) {
+      ss.wzoom.prepare();
+    }
+  });
+};
 
 VirtualSkySlideShow.prototype.moveToClock = function (date, duration, onEnd) {
   //console.log("move to " + date);
@@ -682,34 +690,37 @@ VirtualSkySlideShow.prototype.toggleZoomMode = function() {
 
 VirtualSkySlideShow.prototype.zoom = function() {
   var slide = this.slides[this.slideIndex];
-  if (this.wzoom == null || slide.video) {
+  if (slide.video) {
     return;
   }
+  if (this.zoomview == null) {
+    this.createZoomView()
+  }
   this.zoomMode = true;
+  if (document.fullscreenElement) {
+    document.fullscreenElement.append(this.zoomview);
+  } else {
+    document.body.style.setProperty("overflow", "hidden");
+    document.body.append(this.zoomview);
+  }
+  this.createWZoom();
   this.zoomviewImage.setAttribute("src", this.slides[this.slideIndex].image);
   this.wzoom.prepare();
-  document.getElementById(ss.id).style.setProperty("visibility", "hidden");
-  if (document.fullscreenElement) {
-    this.zoomview.requestFullscreen();
-  }
   this.zoomview.style.setProperty("z-index", "100");
   this.zoomview.style.setProperty("visibility", "visible");
   this.zoomview.focus();
 }
 
 VirtualSkySlideShow.prototype.endZoom = function() {
-  if (this.wzoom == null) {
+  if (!this.zoomview || !this.zoomview.parentElement) {
     return;
   }
-  if (document.fullscreenElement) {
-    document.getElementById(ss.id).requestFullscreen();
-  }
+  this.zoomview.remove();
+  this.wzoom.destroy();
+  this.wzoom = null;
   this.zoomviewImage.setAttribute("src", "");
   this.zoomview.style.setProperty("visibility", "hidden");
-  this.wzoom.prepare();
   this.zoomMode = false;
-  document.getElementById(ss.id).style.setProperty("visibility", "visible");
-  this.zoomview.style.setProperty("z-index", "-100");
   document.getElementById(ss.id).focus();
 }
 
@@ -718,6 +729,7 @@ VirtualSkySlideShow.prototype.handleWheel = function(e) {
     return;
   }
   if (e.deltaY < 0) {
+    ss.pause = true;
     ss.zoom();
   }
 }
