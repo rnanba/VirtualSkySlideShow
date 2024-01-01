@@ -449,7 +449,7 @@ VirtualSkySlideShow.prototype.hideVideo = function () {
       ss.video.removeEventListener('transitionend', transitionEnd);
       ss.videoWrapper.style.setProperty("visibility", "hidden");
       ss.video.pause();
-      ss.video.setAttribute('src', null);
+      ss.video.removeAttribute('src');
     };
     ss.video.addEventListener('transitionend', transitionEnd);
     ss.video.style.setProperty("opacity", "0");
@@ -718,7 +718,7 @@ VirtualSkySlideShow.prototype.endZoom = function() {
   this.zoomview.remove();
   this.wzoom.destroy();
   this.wzoom = null;
-  this.zoomviewImage.setAttribute("src", "");
+  this.zoomviewImage.removeAttribute("src");
   this.zoomview.style.setProperty("visibility", "hidden");
   this.zoomMode = false;
   document.getElementById(ss.id).focus();
